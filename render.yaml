@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: event-management-api
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: USE_IN_MEMORY_DB
+        value: "false"
+      - key: CLIENT_URLS
+        sync: false
+      - key: PUBLIC_BASE_URL
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_SECURE
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: EVENT_NAME
+        value: Annual Leadership Meet
+      - key: EVENT_ADDRESS
+        value: The Leela Ambience Delhi
+      - key: BADGE_TEMPLATE_PATH
+        sync: false

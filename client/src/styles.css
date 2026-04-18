@@ -177,6 +177,14 @@ select {
   background: #101723;
 }
 
+.scanner-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  color: var(--muted);
+}
+
 .scanner-video {
   width: 100%;
   min-height: 280px;

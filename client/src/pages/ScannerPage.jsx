@@ -33,17 +33,47 @@ export default function ScannerPage() {
   const [scanStatus, setScanStatus] = useState("Camera is off.");
   const [notice, setNotice] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isContinuousMode, setIsContinuousMode] = useState(true);
   const videoRef = useRef(null);
   const readerRef = useRef(null);
   const controlsRef = useRef(null);
   const scanLockRef = useRef(false);
+  const keepCameraRunningRef = useRef(false);
+  const noticeTimerRef = useRef(null);
 
   useEffect(() => {
     return () => {
       controlsRef.current?.stop();
       readerRef.current?.reset();
+      if (noticeTimerRef.current) {
+        window.clearTimeout(noticeTimerRef.current);
+      }
     };
   }, []);
+
+  function clearNoticeTimer() {
+    if (noticeTimerRef.current) {
+      window.clearTimeout(noticeTimerRef.current);
+      noticeTimerRef.current = null;
+    }
+  }
+
+  function closeNotice() {
+    clearNoticeTimer();
+    setNotice(null);
+  }
+
+  function scheduleNextScan(type = "success") {
+    if (!keepCameraRunningRef.current || !isContinuousMode) {
+      return;
+    }
+
+    clearNoticeTimer();
+    noticeTimerRef.current = window.setTimeout(() => {
+      setNotice(null);
+      startCameraScanner(true);
+    }, type === "success" ? 900 : 1400);
+  }
 
   async function submitScan(rawToken) {
     const normalizedToken = extractToken(rawToken);
@@ -67,16 +97,18 @@ export default function ScannerPage() {
       setToken("");
       setScanStatus("Attendance recorded successfully.");
       setNotice(buildNotice("success", "Scan Successful", data.message, data.attendee));
+      scheduleNextScan("success");
     } catch (requestError) {
       const message =
         requestError.code === "ECONNABORTED"
           ? "Scan request timed out. Please try again."
-          : requestError.response?.data?.message || "Scan failed.";
+          : requestError.response?.data?.message || requestError.message || "Scan failed.";
       const attendee = requestError.response?.data?.attendee || null;
       setResult(null);
       setError(message);
       setScanStatus(message);
       setNotice(buildNotice("error", "Scan Failed", message, attendee));
+      scheduleNextScan("error");
     } finally {
       setIsSubmitting(false);
       scanLockRef.current = false;
@@ -103,12 +135,19 @@ export default function ScannerPage() {
     await submitScan(token);
   }
 
-  async function startCameraScanner() {
+  async function startCameraScanner(isRestart = false) {
     setError("");
     setCameraState("starting");
     setScanStatus("Starting camera...");
+    if (!isRestart) {
+      keepCameraRunningRef.current = true;
+    }
+    clearNoticeTimer();
+    setNotice(null);
 
     try {
+      controlsRef.current?.stop();
+      readerRef.current?.reset();
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
       const devices = await BrowserMultiFormatReader.listVideoInputDevices();
@@ -141,11 +180,14 @@ export default function ScannerPage() {
   }
 
   function stopCameraScanner() {
+    keepCameraRunningRef.current = false;
+    clearNoticeTimer();
     controlsRef.current?.stop();
     readerRef.current?.reset();
     scanLockRef.current = false;
     setCameraState("idle");
     setScanStatus("Camera stopped.");
+    setNotice(null);
   }
 
   return (
@@ -167,6 +209,15 @@ export default function ScannerPage() {
             Stop Camera
           </button>
         </div>
+
+        <label className="scanner-toggle">
+          <input
+            type="checkbox"
+            checked={isContinuousMode}
+            onChange={(event) => setIsContinuousMode(event.target.checked)}
+          />
+          Continuous scanning for event use
+        </label>
 
         <p className="status-text">{scanStatus}</p>
         {decodedValue ? <p className="status-text">Decoded QR: {decodedValue}</p> : null}
@@ -208,7 +259,7 @@ export default function ScannerPage() {
       </section>
 
       {notice ? (
-        <div className="scan-notice-backdrop" onClick={() => setNotice(null)}>
+        <div className="scan-notice-backdrop" onClick={closeNotice}>
           <div className={`scan-notice scan-notice-${notice.type}`} onClick={(event) => event.stopPropagation()}>
             <h3>{notice.title}</h3>
             <p>{notice.message}</p>
@@ -218,7 +269,7 @@ export default function ScannerPage() {
                 <span>{notice.attendee.registrationNumber}</span>
               </div>
             ) : null}
-            <button type="button" onClick={() => setNotice(null)}>
+            <button type="button" onClick={closeNotice}>
               Close
             </button>
           </div>

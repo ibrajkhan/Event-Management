@@ -35,18 +35,22 @@ export async function recordScan(req, res) {
 
   attendee.attendance[type] = {
     scannedAt: new Date(),
-    deviceLabel: req.body.deviceLabel || "Web scanner",
-    byUser: req.body.byUser || "Staff"
+    deviceLabel: req.body?.deviceLabel || req.query.deviceLabel || "Web scanner",
+    byUser: req.body?.byUser || req.query.byUser || "Staff"
   };
 
   await attendee.save();
   const updated = attendee.toObject();
 
-  req.app.get("io").emit("attendance:updated", {
-    attendeeId: attendee.id,
-    type,
-    scannedAt: updated.attendance[type].scannedAt
-  });
+  try {
+    req.app.get("io")?.emit("attendance:updated", {
+      attendeeId: attendee.id,
+      type,
+      scannedAt: updated.attendance[type].scannedAt
+    });
+  } catch (error) {
+    console.error("Socket emit failed", error);
+  }
 
   res.json({
     message: scanLabels[type],

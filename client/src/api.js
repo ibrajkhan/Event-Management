@@ -36,10 +36,11 @@ export async function sendAllBadgeEmails() {
 }
 
 export async function recordScan(type, token) {
-  const { data } = await api.post(`/scan/${type}/${token}`, {
-    deviceLabel: "Scanner Web App",
-    byUser: "Event Staff"
-  }, {
+  const { data } = await api.get(`/scan/${type}/${encodeURIComponent(token)}`, {
+    params: {
+      deviceLabel: "Scanner Web App",
+      byUser: "Event Staff"
+    },
     timeout: 12000
   });
   return data;

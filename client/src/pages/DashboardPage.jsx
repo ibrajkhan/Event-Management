@@ -3,8 +3,6 @@ import { io } from "socket.io-client";
 import { fetchDashboard } from "../api";
 import StatCard from "../components/StatCard.jsx";
 
-const socket = io((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace("/api", ""));
-
 export default function DashboardPage() {
   const [summary, setSummary] = useState({
     total: 0,
@@ -16,9 +14,15 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
+    const socket = io((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace("/api", ""));
+
     loadSummary();
     socket.on("attendance:updated", loadSummary);
-    return () => socket.off("attendance:updated", loadSummary);
+
+    return () => {
+      socket.off("attendance:updated", loadSummary);
+      socket.close();
+    };
   }, []);
 
   async function loadSummary() {

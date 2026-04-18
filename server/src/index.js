@@ -10,7 +10,16 @@ async function start() {
   const server = createServer(app);
   const io = new Server(server, {
     cors: {
-      origin: config.clientUrl
+      origin(origin, callback) {
+        const normalizedOrigin = origin?.replace(/\/+$/, "");
+
+        if (!origin || config.clientOrigins.includes(normalizedOrigin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(new Error(`Origin ${origin} is not allowed by Socket.IO CORS.`));
+      }
     }
   });
 

@@ -2,10 +2,15 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+function normalizeOrigin(value) {
+  return value.replace(/\/+$/, "");
+}
+
 const defaultPublicBaseUrl = process.env.RENDER_EXTERNAL_URL || "http://localhost:5000";
 const clientOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "http://localhost:5173")
   .split(",")
   .map((value) => value.trim())
+  .map((value) => normalizeOrigin(value))
   .filter(Boolean);
 
 export const config = {

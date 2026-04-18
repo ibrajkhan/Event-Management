@@ -29,6 +29,7 @@ export default function ScannerPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [cameraState, setCameraState] = useState("idle");
+  const [scanStatus, setScanStatus] = useState("Camera is off.");
   const [notice, setNotice] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const videoRef = useRef(null);
@@ -49,23 +50,27 @@ export default function ScannerPage() {
     if (!normalizedToken) {
       setResult(null);
       setError("No QR token found. Please scan again.");
+      setScanStatus("QR detected, but token could not be read.");
       setNotice(buildNotice("error", "Scan Failed", "No QR token found. Please scan again."));
       return;
     }
 
     setIsSubmitting(true);
     setError("");
+    setScanStatus("QR detected. Recording attendance...");
 
     try {
       const data = await recordScan(scanType, normalizedToken);
       setResult(data);
       setToken("");
+      setScanStatus("Attendance recorded successfully.");
       setNotice(buildNotice("success", "Scan Successful", data.message, data.attendee));
     } catch (requestError) {
       const message = requestError.response?.data?.message || "Scan failed.";
       const attendee = requestError.response?.data?.attendee || null;
       setResult(null);
       setError(message);
+      setScanStatus(message);
       setNotice(buildNotice("error", "Scan Failed", message, attendee));
     } finally {
       setIsSubmitting(false);
@@ -80,17 +85,18 @@ export default function ScannerPage() {
   async function startCameraScanner() {
     setError("");
     setCameraState("starting");
+    setScanStatus("Starting camera...");
 
     try {
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
-      controlsRef.current = await reader.decodeFromConstraints(
-        {
-          audio: false,
-          video: {
-            facingMode: { ideal: "environment" }
-          }
-        },
+      const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+      const rearCamera =
+        devices.find((device) => /back|rear|environment/i.test(device.label)) ||
+        devices[devices.length - 1];
+
+      controlsRef.current = await reader.decodeFromVideoDevice(
+        rearCamera?.deviceId,
         videoRef.current,
         async (decodedResult) => {
           if (!decodedResult || scanLockRef.current) {
@@ -98,6 +104,7 @@ export default function ScannerPage() {
           }
 
           scanLockRef.current = true;
+          setScanStatus("QR detected. Processing...");
           const scannedToken = extractToken(decodedResult.getText());
           controlsRef.current?.stop();
           reader.reset();
@@ -110,9 +117,11 @@ export default function ScannerPage() {
         }
       );
       setCameraState("live");
+      setScanStatus("Camera is live. Point it at the badge QR.");
     } catch {
       setCameraState("idle");
       setError("Unable to access the rear camera. Please allow camera permission and try again.");
+      setScanStatus("Camera could not be started.");
       setNotice(buildNotice("error", "Camera Error", "Unable to access the rear camera. Please allow camera permission and try again."));
     }
   }
@@ -122,6 +131,7 @@ export default function ScannerPage() {
     readerRef.current?.reset();
     scanLockRef.current = false;
     setCameraState("idle");
+    setScanStatus("Camera stopped.");
   }
 
   return (
@@ -144,8 +154,10 @@ export default function ScannerPage() {
           </button>
         </div>
 
+        <p className="status-text">{scanStatus}</p>
+
         <div className="camera-panel">
-          <video ref={videoRef} className="scanner-video" muted playsInline />
+          <video ref={videoRef} className="scanner-video" muted playsInline autoPlay />
         </div>
 
         <form className="scanner-form" onSubmit={handleSubmit}>

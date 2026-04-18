@@ -79,7 +79,23 @@ export default function ScannerPage() {
       setNotice(buildNotice("error", "Scan Failed", message, attendee));
     } finally {
       setIsSubmitting(false);
+      scanLockRef.current = false;
     }
+  }
+
+  function handleDetectedQr(rawText) {
+    const scannedToken = extractToken(rawText);
+    setDecodedValue(String(rawText || ""));
+    setToken(scannedToken);
+    setScanStatus("QR detected. Preparing attendance request...");
+
+    controlsRef.current?.stop();
+    readerRef.current?.reset();
+    setCameraState("idle");
+
+    window.setTimeout(() => {
+      submitScan(rawText);
+    }, 150);
   }
 
   async function handleSubmit(event) {
@@ -111,15 +127,7 @@ export default function ScannerPage() {
           scanLockRef.current = true;
           setScanStatus("QR detected. Processing...");
           const rawText = decodedResult.getText();
-          const scannedToken = extractToken(rawText);
-          controlsRef.current?.stop();
-          reader.reset();
-          setCameraState("idle");
-          setToken(scannedToken);
-          await submitScan(rawText);
-          window.setTimeout(() => {
-            scanLockRef.current = false;
-          }, 1200);
+          handleDetectedQr(rawText);
         }
       );
       setCameraState("live");

@@ -8,8 +8,19 @@ function extractToken(rawValue) {
     return "";
   }
 
-  const parts = value.split("/");
-  return parts[parts.length - 1];
+  try {
+    const parsedUrl = new URL(value);
+    const parts = parsedUrl.pathname.split("/").filter(Boolean);
+    return parts[parts.length - 1] || "";
+  } catch {
+    const sanitized = value.split("?")[0].split("#")[0].replace(/\/+$/, "");
+    const parts = sanitized.split("/").filter(Boolean);
+    return parts[parts.length - 1] || sanitized;
+  }
+}
+
+function buildNotice(type, title, message, attendee = null) {
+  return { type, title, message, attendee };
 }
 
 export default function ScannerPage() {
@@ -18,9 +29,12 @@ export default function ScannerPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [cameraState, setCameraState] = useState("idle");
+  const [notice, setNotice] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const videoRef = useRef(null);
   const readerRef = useRef(null);
   const controlsRef = useRef(null);
+  const scanLockRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -29,18 +43,38 @@ export default function ScannerPage() {
     };
   }, []);
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+  async function submitScan(rawToken) {
+    const normalizedToken = extractToken(rawToken);
+
+    if (!normalizedToken) {
+      setResult(null);
+      setError("No QR token found. Please scan again.");
+      setNotice(buildNotice("error", "Scan Failed", "No QR token found. Please scan again."));
+      return;
+    }
+
+    setIsSubmitting(true);
     setError("");
 
     try {
-      const data = await recordScan(scanType, extractToken(token));
+      const data = await recordScan(scanType, normalizedToken);
       setResult(data);
       setToken("");
+      setNotice(buildNotice("success", "Scan Successful", data.message, data.attendee));
     } catch (requestError) {
+      const message = requestError.response?.data?.message || "Scan failed.";
+      const attendee = requestError.response?.data?.attendee || null;
       setResult(null);
-      setError(requestError.response?.data?.message || "Scan failed.");
+      setError(message);
+      setNotice(buildNotice("error", "Scan Failed", message, attendee));
+    } finally {
+      setIsSubmitting(false);
     }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    await submitScan(token);
   }
 
   async function startCameraScanner() {
@@ -50,35 +84,43 @@ export default function ScannerPage() {
     try {
       const reader = new BrowserMultiFormatReader();
       readerRef.current = reader;
-      controlsRef.current = await reader.decodeFromVideoDevice(undefined, videoRef.current, async (result) => {
-        if (!result) {
-          return;
-        }
+      controlsRef.current = await reader.decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: { ideal: "environment" }
+          }
+        },
+        videoRef.current,
+        async (decodedResult) => {
+          if (!decodedResult || scanLockRef.current) {
+            return;
+          }
 
-        const scannedToken = extractToken(result.getText());
-        controlsRef.current?.stop();
-        reader.reset();
-        setCameraState("idle");
-        setToken(scannedToken);
-
-        try {
-          const data = await recordScan(scanType, scannedToken);
-          setResult(data);
-        } catch (requestError) {
-          setResult(null);
-          setError(requestError.response?.data?.message || "Scan failed.");
+          scanLockRef.current = true;
+          const scannedToken = extractToken(decodedResult.getText());
+          controlsRef.current?.stop();
+          reader.reset();
+          setCameraState("idle");
+          setToken(scannedToken);
+          await submitScan(scannedToken);
+          window.setTimeout(() => {
+            scanLockRef.current = false;
+          }, 1200);
         }
-      });
+      );
       setCameraState("live");
-    } catch (cameraError) {
+    } catch {
       setCameraState("idle");
-      setError("Unable to access camera. Please allow camera permission or paste the QR token manually.");
+      setError("Unable to access the rear camera. Please allow camera permission and try again.");
+      setNotice(buildNotice("error", "Camera Error", "Unable to access the rear camera. Please allow camera permission and try again."));
     }
   }
 
   function stopCameraScanner() {
     controlsRef.current?.stop();
     readerRef.current?.reset();
+    scanLockRef.current = false;
     setCameraState("idle");
   }
 
@@ -123,7 +165,9 @@ export default function ScannerPage() {
               placeholder="Paste the QR URL/token or scan with camera"
             />
           </label>
-          <button type="submit">Record Scan</button>
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Recording..." : "Record Scan"}
+          </button>
         </form>
 
         {error ? <p className="error-text">{error}</p> : null}
@@ -135,6 +179,24 @@ export default function ScannerPage() {
           </div>
         ) : null}
       </section>
+
+      {notice ? (
+        <div className="scan-notice-backdrop" onClick={() => setNotice(null)}>
+          <div className={`scan-notice scan-notice-${notice.type}`} onClick={(event) => event.stopPropagation()}>
+            <h3>{notice.title}</h3>
+            <p>{notice.message}</p>
+            {notice.attendee ? (
+              <div className="scan-notice-meta">
+                <strong>{notice.attendee.name}</strong>
+                <span>{notice.attendee.registrationNumber}</span>
+              </div>
+            ) : null}
+            <button type="button" onClick={() => setNotice(null)}>
+              Close
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

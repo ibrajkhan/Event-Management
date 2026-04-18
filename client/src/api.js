@@ -39,6 +39,8 @@ export async function recordScan(type, token) {
   const { data } = await api.post(`/scan/${type}/${token}`, {
     deviceLabel: "Scanner Web App",
     byUser: "Event Staff"
+  }, {
+    timeout: 12000
   });
   return data;
 }

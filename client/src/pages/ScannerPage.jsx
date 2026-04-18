@@ -26,6 +26,7 @@ function buildNotice(type, title, message, attendee = null) {
 export default function ScannerPage() {
   const [scanType, setScanType] = useState("entry");
   const [token, setToken] = useState("");
+  const [decodedValue, setDecodedValue] = useState("");
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [cameraState, setCameraState] = useState("idle");
@@ -46,6 +47,7 @@ export default function ScannerPage() {
 
   async function submitScan(rawToken) {
     const normalizedToken = extractToken(rawToken);
+    setDecodedValue(String(rawToken || ""));
 
     if (!normalizedToken) {
       setResult(null);
@@ -66,7 +68,10 @@ export default function ScannerPage() {
       setScanStatus("Attendance recorded successfully.");
       setNotice(buildNotice("success", "Scan Successful", data.message, data.attendee));
     } catch (requestError) {
-      const message = requestError.response?.data?.message || "Scan failed.";
+      const message =
+        requestError.code === "ECONNABORTED"
+          ? "Scan request timed out. Please try again."
+          : requestError.response?.data?.message || "Scan failed.";
       const attendee = requestError.response?.data?.attendee || null;
       setResult(null);
       setError(message);
@@ -105,12 +110,13 @@ export default function ScannerPage() {
 
           scanLockRef.current = true;
           setScanStatus("QR detected. Processing...");
-          const scannedToken = extractToken(decodedResult.getText());
+          const rawText = decodedResult.getText();
+          const scannedToken = extractToken(rawText);
           controlsRef.current?.stop();
           reader.reset();
           setCameraState("idle");
           setToken(scannedToken);
-          await submitScan(scannedToken);
+          await submitScan(rawText);
           window.setTimeout(() => {
             scanLockRef.current = false;
           }, 1200);
@@ -155,6 +161,7 @@ export default function ScannerPage() {
         </div>
 
         <p className="status-text">{scanStatus}</p>
+        {decodedValue ? <p className="status-text">Decoded QR: {decodedValue}</p> : null}
 
         <div className="camera-panel">
           <video ref={videoRef} className="scanner-video" muted playsInline autoPlay />

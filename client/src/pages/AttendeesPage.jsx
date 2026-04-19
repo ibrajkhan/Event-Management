@@ -7,7 +7,10 @@ export default function AttendeesPage() {
   const [attendees, setAttendees] = useState([]);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
   const [isSendingAll, setIsSendingAll] = useState(false);
+  const [sendingEmailId, setSendingEmailId] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
 
   useEffect(() => {
     loadAttendees();
@@ -19,9 +22,14 @@ export default function AttendeesPage() {
   }
 
   async function handleSendEmail(id) {
-    const result = await sendBadgeEmail(id);
-    setMessage(result.delivered ? "Email sent successfully." : result.reason);
-    loadAttendees();
+    setSendingEmailId(id);
+    try {
+      const result = await sendBadgeEmail(id);
+      setMessage(result.delivered ? "Email sent successfully." : result.reason);
+      await loadAttendees();
+    } finally {
+      setSendingEmailId("");
+    }
   }
 
   async function handleSendAllEmails() {
@@ -37,6 +45,16 @@ export default function AttendeesPage() {
     }
   }
 
+  async function handleExport() {
+    setIsExporting(true);
+    try {
+      await downloadExport();
+      setMessage("Excel export downloaded successfully.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <div className="page">
       <section className="hero">
@@ -44,7 +62,7 @@ export default function AttendeesPage() {
         <h2>Import, search, export, and resend attendee M-badges.</h2>
       </section>
 
-      <ImportPanel onImported={loadAttendees} />
+      <ImportPanel onImported={loadAttendees} onImportingChange={setIsImporting} />
 
       <section className="panel controls-row">
         <input
@@ -53,7 +71,9 @@ export default function AttendeesPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
-        <button onClick={downloadExport}>Export Excel</button>
+        <button onClick={handleExport} disabled={isExporting || isImporting}>
+          {isExporting ? "Exporting..." : "Export Excel"}
+        </button>
         <button onClick={handleSendAllEmails} disabled={isSendingAll}>
           {isSendingAll ? "Sending..." : "Send Email To All"}
         </button>
@@ -61,7 +81,7 @@ export default function AttendeesPage() {
 
       {message ? <p className="status-text">{message}</p> : null}
 
-      <AttendeeTable attendees={attendees} onSendEmail={handleSendEmail} />
+      <AttendeeTable attendees={attendees} onSendEmail={handleSendEmail} sendingEmailId={sendingEmailId} />
     </div>
   );
 }

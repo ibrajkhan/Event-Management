@@ -1,4 +1,4 @@
-export default function AttendeeTable({ attendees, onSendEmail }) {
+export default function AttendeeTable({ attendees, onSendEmail, sendingEmailId }) {
   return (
     <section className="panel">
       <div className="panel-header">
@@ -39,8 +39,12 @@ export default function AttendeeTable({ attendees, onSendEmail }) {
                   </a>
                 </td>
                 <td>
-                  <button onClick={() => onSendEmail(attendee._id)}>
-                    {attendee.emailDelivery?.status === "sent" ? "Resend" : "Send"}
+                  <button onClick={() => onSendEmail(attendee._id)} disabled={sendingEmailId === attendee._id}>
+                    {sendingEmailId === attendee._id
+                      ? "Sending..."
+                      : attendee.emailDelivery?.status === "sent"
+                        ? "Resend"
+                        : "Send"}
                   </button>
                 </td>
               </tr>

@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { uploadAttendees } from "../api";
 
-export default function ImportPanel({ onImported }) {
+export default function ImportPanel({ onImported, onImportingChange }) {
   const [file, setFile] = useState(null);
   const [message, setMessage] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
 
   async function handleImport(event) {
     event.preventDefault();
@@ -12,9 +13,17 @@ export default function ImportPanel({ onImported }) {
       return;
     }
 
-    const result = await uploadAttendees(file);
-    setMessage(`${result.imported} attendees imported.`);
-    onImported();
+    setIsImporting(true);
+    onImportingChange?.(true);
+
+    try {
+      const result = await uploadAttendees(file);
+      setMessage(`${result.imported} attendees imported.`);
+      await onImported();
+    } finally {
+      setIsImporting(false);
+      onImportingChange?.(false);
+    }
   }
 
   return (
@@ -24,8 +33,10 @@ export default function ImportPanel({ onImported }) {
         <p>Upload Excel with Employee ID, Name, Email, Phone, Designation, and related columns.</p>
       </div>
       <form className="inline-form" onSubmit={handleImport}>
-        <input type="file" accept=".xlsx,.xls,.csv" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-        <button type="submit">Import</button>
+        <input type="file" accept=".xlsx,.xls,.csv" onChange={(event) => setFile(event.target.files?.[0] || null)} disabled={isImporting} />
+        <button type="submit" disabled={isImporting}>
+          {isImporting ? "Importing..." : "Import"}
+        </button>
       </form>
       {message ? <p className="status-text">{message}</p> : null}
     </section>

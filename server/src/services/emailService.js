@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { createBadgePdf } from "./badgeService.js";
 import { config } from "../config.js";
 
 function canSendMail() {
@@ -36,6 +37,7 @@ export async function sendAttendeeQrMail(attendee) {
 
   try {
     const transporter = createTransporter();
+    const badgePdf = await createBadgePdf(attendee);
     const info = await transporter.sendMail({
       from: config.smtp.from,
       to: attendee.email,
@@ -45,9 +47,18 @@ export async function sendAttendeeQrMail(attendee) {
           <h2>${config.event.name}</h2>
           <p>Hello ${attendee.name},</p>
           <p>Your registration number is <strong>${attendee.registrationNumber}</strong>.</p>
+          <p>Event Venue: ${attendee.eventAddress || config.event.address}</p>
+          <p>Your badge PDF is attached to this email.</p>
           <p><a href="${attendee.badgeUrl}">Open your M-badge</a></p>
         </div>
-      `
+      `,
+      attachments: [
+        {
+          filename: `${attendee.registrationNumber}.pdf`,
+          content: Buffer.from(badgePdf),
+          contentType: "application/pdf"
+        }
+      ]
     });
 
     return {

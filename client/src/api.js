@@ -21,8 +21,19 @@ export async function uploadAttendees(file) {
   return data;
 }
 
-export function downloadExport() {
-  window.open(`${api.defaults.baseURL}/attendees/export`, "_blank");
+export async function downloadExport() {
+  const response = await api.get("/attendees/export", {
+    responseType: "blob"
+  });
+
+  const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+  const link = document.createElement("a");
+  link.href = blobUrl;
+  link.download = "attendees-export.xlsx";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(blobUrl);
 }
 
 export async function sendBadgeEmail(id) {

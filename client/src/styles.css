@@ -85,6 +85,7 @@ select {
   display: grid;
   gap: 12px;
   margin-top: 28px;
+  margin-bottom: 24px;
 }
 
 .sidebar nav a {

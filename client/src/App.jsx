@@ -8,7 +8,9 @@ import ScannerPage from "./pages/ScannerPage.jsx";
 
 export default function App() {
   const [user, setUser] = useState(getStoredAuth()?.user || null);
-  const [isCheckingAuth, setIsCheckingAuth] = useState(Boolean(getStoredAuth()?.token));
+  const [isCheckingAuth, setIsCheckingAuth] = useState(
+    Boolean(getStoredAuth()?.token),
+  );
 
   useEffect(() => {
     const storedAuth = getStoredAuth();
@@ -36,7 +38,13 @@ export default function App() {
   }
 
   if (isCheckingAuth) {
-    return <div className="login-shell"><section className="login-card"><h1>Checking access...</h1></section></div>;
+    return (
+      <div className="login-shell">
+        <section className="login-card">
+          <h1>Checking access...</h1>
+        </section>
+      </div>
+    );
   }
 
   if (!user) {
@@ -46,7 +54,7 @@ export default function App() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <p className="eyebrow">ICCW TECH</p>
+        <p className="eyebrow">ICCW TECH(Ibraj khan)</p>
         <h1>Event Control Center</h1>
         <p className="status-text">Signed in as {user.username}</p>
         <nav>
@@ -54,7 +62,9 @@ export default function App() {
           <NavLink to="/attendees">Attendees</NavLink>
           <NavLink to="/scanner">Scanner</NavLink>
         </nav>
-        <button type="button" onClick={handleLogout}>Logout</button>
+        <button type="button" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
       <main className="content">
         <Routes>

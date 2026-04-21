@@ -1,9 +1,11 @@
 import express from "express";
 import cors from "cors";
+import authRoutes from "./routes/authRoutes.js";
 import attendeeRoutes from "./routes/attendeeRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import scanRoutes from "./routes/scanRoutes.js";
 import { config } from "./config.js";
+import { requireAuth } from "./middleware/authMiddleware.js";
 
 export function createApp() {
   const app = express();
@@ -28,6 +30,8 @@ export function createApp() {
     res.json({ status: "ok" });
   });
 
+  app.use("/api/auth", authRoutes);
+  app.use("/api", requireAuth);
   app.use("/api/attendees", attendeeRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/scan", scanRoutes);

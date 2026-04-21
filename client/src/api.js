@@ -1,8 +1,42 @@
 import axios from "axios";
 
+const AUTH_STORAGE_KEY = "event_admin_auth";
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"
 });
+
+export function getStoredAuth() {
+  const rawValue = window.localStorage.getItem(AUTH_STORAGE_KEY);
+  return rawValue ? JSON.parse(rawValue) : null;
+}
+
+export function setStoredAuth(auth) {
+  if (!auth) {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    delete api.defaults.headers.common.Authorization;
+    return;
+  }
+
+  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(auth));
+  api.defaults.headers.common.Authorization = `Bearer ${auth.token}`;
+}
+
+const existingAuth = typeof window !== "undefined" ? getStoredAuth() : null;
+if (existingAuth?.token) {
+  api.defaults.headers.common.Authorization = `Bearer ${existingAuth.token}`;
+}
+
+export async function login(username, password) {
+  const { data } = await api.post("/auth/login", { username, password });
+  setStoredAuth(data);
+  return data;
+}
+
+export async function fetchSession() {
+  const { data } = await api.get("/auth/session");
+  return data;
+}
 
 export async function fetchDashboard() {
   const { data } = await api.get("/dashboard/summary");
@@ -38,11 +72,6 @@ export async function downloadExport() {
 
 export async function sendBadgeEmail(id) {
   const { data } = await api.post(`/attendees/${id}/send-email`);
-  return data;
-}
-
-export async function sendAllBadgeEmails() {
-  const { data } = await api.post("/attendees/send-all-emails");
   return data;
 }
 

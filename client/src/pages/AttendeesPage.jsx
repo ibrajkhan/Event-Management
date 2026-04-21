@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { downloadExport, fetchAttendees, sendAllBadgeEmails, sendBadgeEmail } from "../api";
+import { downloadExport, fetchAttendees, sendBadgeEmail } from "../api";
 import ImportPanel from "../components/ImportPanel.jsx";
 import AttendeeTable from "../components/AttendeeTable.jsx";
 
@@ -11,6 +11,7 @@ export default function AttendeesPage() {
   const [isSendingAll, setIsSendingAll] = useState(false);
   const [sendingEmailId, setSendingEmailId] = useState("");
   const [isImporting, setIsImporting] = useState(false);
+  const [bulkEmailProgress, setBulkEmailProgress] = useState({ current: 0, total: 0 });
 
   useEffect(() => {
     loadAttendees();
@@ -34,14 +35,29 @@ export default function AttendeesPage() {
 
   async function handleSendAllEmails() {
     setIsSendingAll(true);
+    setBulkEmailProgress({ current: 0, total: attendees.length });
     try {
-      const result = await sendAllBadgeEmails();
-      setMessage(
-        `Bulk email complete. Sent: ${result.sent}, Failed: ${result.failed}, Skipped: ${result.skipped}.`
-      );
+      let sent = 0;
+      let failed = 0;
+      let skipped = 0;
+
+      for (const [index, attendee] of attendees.entries()) {
+        setBulkEmailProgress({ current: index + 1, total: attendees.length });
+        const result = await sendBadgeEmail(attendee._id);
+        if (result.status === "sent") {
+          sent += 1;
+        } else if (result.status === "skipped") {
+          skipped += 1;
+        } else {
+          failed += 1;
+        }
+      }
+
+      setMessage(`Bulk email complete. Sent: ${sent}, Failed: ${failed}, Skipped: ${skipped}.`);
       loadAttendees();
     } finally {
       setIsSendingAll(false);
+      setBulkEmailProgress({ current: 0, total: 0 });
     }
   }
 
@@ -75,7 +91,9 @@ export default function AttendeesPage() {
           {isExporting ? "Exporting..." : "Export Excel"}
         </button>
         <button onClick={handleSendAllEmails} disabled={isSendingAll}>
-          {isSendingAll ? "Sending..." : "Send Email To All"}
+          {isSendingAll
+            ? `Sending ${bulkEmailProgress.current} / ${bulkEmailProgress.total}`
+            : "Send Email To All"}
         </button>
       </section>
 

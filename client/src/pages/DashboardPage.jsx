@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
-import { fetchDashboard } from "../api";
+import { fetchDashboard, getStoredAuth } from "../api";
 import StatCard from "../components/StatCard.jsx";
 
 export default function DashboardPage() {
@@ -14,7 +14,11 @@ export default function DashboardPage() {
   });
 
   useEffect(() => {
-    const socket = io((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace("/api", ""));
+    const socket = io((import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace("/api", ""), {
+      auth: {
+        token: getStoredAuth()?.token || ""
+      }
+    });
 
     loadSummary();
     socket.on("attendance:updated", loadSummary);

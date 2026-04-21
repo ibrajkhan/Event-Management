@@ -32,5 +32,10 @@ export const config = {
     name: process.env.EVENT_NAME || "Annual Leadership Meet",
     address: process.env.EVENT_ADDRESS || "123 Event Street, Kolkata"
   },
-  badgeTemplatePath: process.env.BADGE_TEMPLATE_PATH || ""
+  badgeTemplatePath: process.env.BADGE_TEMPLATE_PATH || "",
+  auth: {
+    username: process.env.ADMIN_USERNAME || "admin",
+    password: process.env.ADMIN_PASSWORD || "ChangeMe123!",
+    secret: process.env.AUTH_SECRET || "replace-this-secret-in-production"
+  }
 };

@@ -15,6 +15,7 @@ export default function AttendeeTable({ attendees, onSendEmail, sendingEmailId }
               <th>Entry</th>
               <th>Lunch</th>
               <th>Dinner</th>
+              <th>Kit</th>
               <th>Email Status</th>
               <th>Badge</th>
               <th>Email</th>
@@ -29,6 +30,7 @@ export default function AttendeeTable({ attendees, onSendEmail, sendingEmailId }
                 <td>{attendee.attendance?.entry?.scannedAt ? "Yes" : "No"}</td>
                 <td>{attendee.attendance?.lunch?.scannedAt ? "Yes" : "No"}</td>
                 <td>{attendee.attendance?.dinner?.scannedAt ? "Yes" : "No"}</td>
+                <td>{attendee.attendance?.kitDistribution?.scannedAt ? "Yes" : "No"}</td>
                 <td>
                   <strong>{attendee.emailDelivery?.status || "pending"}</strong>
                   <div>{attendee.emailDelivery?.failureReason || "-"}</div>

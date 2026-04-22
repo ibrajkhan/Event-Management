@@ -9,6 +9,7 @@ export default function DashboardPage() {
     checkedIn: 0,
     lunchTaken: 0,
     dinnerTaken: 0,
+    kitsDistributed: 0,
     pendingCheckIn: 0,
     recent: []
   });
@@ -46,6 +47,7 @@ export default function DashboardPage() {
         <StatCard label="Checked In" value={summary.checkedIn} tone="green" />
         <StatCard label="Lunch Taken" value={summary.lunchTaken} tone="amber" />
         <StatCard label="Dinner Taken" value={summary.dinnerTaken} tone="red" />
+        <StatCard label="Kits Distributed" value={summary.kitsDistributed} tone="blue" />
       </section>
 
       <section className="panel">

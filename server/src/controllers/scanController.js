@@ -3,7 +3,8 @@ import { Attendee } from "../models/Attendee.js";
 const scanLabels = {
   entry: "Event entry recorded.",
   lunch: "Lunch recorded.",
-  dinner: "Dinner recorded."
+  dinner: "Dinner recorded.",
+  kitDistribution: "Kit distribution recorded."
 };
 
 export async function resolveQr(req, res) {
@@ -17,7 +18,7 @@ export async function resolveQr(req, res) {
 
 export async function recordScan(req, res) {
   const { token, type } = req.params;
-  if (!["entry", "lunch", "dinner"].includes(type)) {
+  if (!["entry", "lunch", "dinner", "kitDistribution"].includes(type)) {
     return res.status(400).json({ message: "Invalid scan type." });
   }
 

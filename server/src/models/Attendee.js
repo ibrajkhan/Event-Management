@@ -50,7 +50,8 @@ const attendeeSchema = new mongoose.Schema(
     attendance: {
       entry: attendanceStateSchema,
       lunch: attendanceStateSchema,
-      dinner: attendanceStateSchema
+      dinner: attendanceStateSchema,
+      kitDistribution: attendanceStateSchema
     }
   },
   { timestamps: true }

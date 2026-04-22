@@ -194,7 +194,7 @@ export default function ScannerPage() {
     <div className="page scanner-page">
       <section className="hero">
         <p className="eyebrow">Mobile Scanner</p>
-        <h2>Record event entry, lunch, and dinner in real time.</h2>
+        <h2>Record event entry, lunch, dinner, and kit distribution in real time.</h2>
         <p className="status-text">
           Open this page on a mobile device during the event, choose the scan type, allow camera access, and scan the attendee QR.
         </p>
@@ -233,6 +233,7 @@ export default function ScannerPage() {
               <option value="entry">Event Entry</option>
               <option value="lunch">Lunch</option>
               <option value="dinner">Dinner</option>
+              <option value="kitDistribution">Kit Distribution</option>
             </select>
           </label>
           <label>

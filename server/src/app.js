@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import attendeeRoutes from "./routes/attendeeRoutes.js";
+import { getBadgePdf } from "./controllers/badgeController.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import scanRoutes from "./routes/scanRoutes.js";
 import { config } from "./config.js";
@@ -31,6 +32,7 @@ export function createApp() {
   });
 
   app.use("/api/auth", authRoutes);
+  app.get("/api/attendees/:token/badge", getBadgePdf);
   app.use("/api", requireAuth);
   app.use("/api/attendees", attendeeRoutes);
   app.use("/api/dashboard", dashboardRoutes);

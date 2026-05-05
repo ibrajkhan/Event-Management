@@ -30,10 +30,18 @@ export default function ImportPanel({ onImported, onImportingChange }) {
     <section className="panel">
       <div className="panel-header">
         <h2>Import Attendees</h2>
-        <p>Upload Excel with Employee ID, Name, Email, Phone, Designation, and related columns.</p>
+        <p>
+          Upload Excel with Employee ID, Name, Emails, Phone, Designation, and
+          related columns.
+        </p>
       </div>
       <form className="inline-form" onSubmit={handleImport}>
-        <input type="file" accept=".xlsx,.xls,.csv" onChange={(event) => setFile(event.target.files?.[0] || null)} disabled={isImporting} />
+        <input
+          type="file"
+          accept=".xlsx,.xls,.csv"
+          onChange={(event) => setFile(event.target.files?.[0] || null)}
+          disabled={isImporting}
+        />
         <button type="submit" disabled={isImporting}>
           {isImporting ? "Importing..." : "Import"}
         </button>

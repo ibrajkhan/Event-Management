@@ -54,7 +54,7 @@ export default function App() {
   return (
     <div className="shell">
       <aside className="sidebar">
-        <p className="eyebrow">ICCW TECH(Ibraj khan)</p>
+        <p className="eyebrow">MICE & more(Ibraj khan)</p>
         <h1>Event Control Center</h1>
         <p className="status-text">Signed in as {user.username}</p>
         <nav>

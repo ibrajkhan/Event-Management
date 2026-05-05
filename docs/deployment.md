@@ -2,7 +2,7 @@
 
 ## Frontend on Netlify
 
-This repo includes [netlify.toml](C:/IBRAZ/Event%20Software%20Online%20Registration/netlify.toml:1) and [client/public/_redirects](C:/IBRAZ/Event%20Software%20Online%20Registration/client/public/_redirects:1) for React Router SPA deployment.
+This repo includes [netlify.toml](C:/IBRAZ/Event%20Software%20Online%20Registration/netlify.toml:1) and [client/public/\_redirects](C:/IBRAZ/Event%20Software%20Online%20Registration/client/public/_redirects:1) for React Router SPA deployment.
 
 ### Netlify settings
 
